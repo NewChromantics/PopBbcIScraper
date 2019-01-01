@@ -4,11 +4,83 @@
 <body>
 <h1>Iplayer scraper.</h1>
 
-<div id=LetterBox>
+<div id=AlphabetBox>
 	<h2>Letters</h2>
 </div>
 
 <script>
+	
+//	from https://stackoverflow.com/a/47445455/355753
+function promiseResponse(xhr, failNon2xx = true)
+{
+	let DoFetch = function (resolve, reject)
+	{
+		// Note that when we call reject, we pass an object
+		// with the request as a property. This makes it easy for
+		// catch blocks to distinguish errors arising here
+		// from errors arising elsewhere. Suggestions on a
+		// cleaner way to allow that are welcome.
+		xhr.onload = function () {
+			if (failNon2xx && (xhr.status < 200 || xhr.status >= 300)) {
+				reject({request: xhr});
+			} else {
+				resolve(xhr);
+			}
+		};
+		xhr.onerror = function () {
+			reject({request: xhr});
+		};
+		xhr.send();
+	}
+	return new Promise(DoFetch);
+}
+	
+async function FetchUrlContent(Url)
+{
+	var xhr = new XMLHttpRequest();
+	xhr.withCredentials = true;
+	//xhr.header('Access-Control-Allow-Origin', "*");
+	//Access-Control-Allow-Origin
+	xhr.open('GET', Url);
+	await promiseResponse( xhr );
+	return xhr.responseText;
+}
+
+async function CreateLetter(Letter)
+{
+	//	https://www.bbc.co.uk/iplayer/a-z/0-9
+	let AlphabetBox = document.getElementById('AlphabetBox');
+	let Url = 'https://www.bbc.co.uk/iplayer/a-z/' + Letter ;
+	let LetterBox = document.createElement('div');
+	let Link = document.createElement('a');
+	Link.src = Url;
+	let Header = document.createElement('h3');
+	Header.innerText = Letter;
+	Link.appendChild(Header);
+	LetterBox.appendChild(Link);
+	AlphabetBox.appendChild(LetterBox);
+	
+	let AppendError = function(Error)
+	{
+		let ErrorElement = document.createElement('div');
+		ErrorElement.innerText = "Error: " + Error;
+		LetterBox.appendChild(ErrorElement);
+	}
+	
+	try
+	{
+		const PageContents = await FetchUrlContent(Url);
+		AppendError("Got body (" + PageContents.length + " chars");
+	}
+	catch(e)
+	{
+		AppendError(e);
+	}
+}
+
+let Letters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','0-9'];
+Letters.forEach(CreateLetter);
+
 </script>
 </body>
 </html>
